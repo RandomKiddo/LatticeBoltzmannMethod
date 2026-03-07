@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\nghug\Desktop\LatticeBoltzmannMethod\build\CMakeFiles\a3af1127a85deff062c246c38c7ffd66\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{CC61009E-135F-3DEE-B4A2-D283B7D1EFFD}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -16,7 +16,8 @@ include_directories(src)
 # Define your executable and its source files
 add_executable(LBM_Solver 
     src/main.cpp 
-    src/test_kernels.cu
+    src/lbm_kernels.cu
+    src/config.h
 )
 
 # Set compiler-specific optimizations

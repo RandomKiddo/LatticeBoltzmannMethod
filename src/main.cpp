@@ -1,43 +1,36 @@
 #include <iostream>
 #include <vector>
-#include <cuda_runtime.h>
-#include "test_kernels.h"
+#include <fstream>
+#include "config.h"
+
+void launch_lbm(float *d_f_in, float *d_f_out);
+void launch_init(float* d_f_in);
 
 int main() {
-    int N = 1000;
-    size_t size = N * sizeof(float);
+    size_t size = 9*NX*NY*sizeof(float);
+    float *d_f_in, *d_f_out;
 
-    // Host memory
-    std::vector<float> h_a(N, 1.0f); // Fill with 1.0
-    std::vector<float> h_b(N, 2.0f); // Fill with 2.0
-    std::vector<float> h_c(N, 0.0f);
+    cudaMalloc(&d_f_in, size);
+    cudaMollac(&d_f_out, size);
 
-    // Device memory
-    float *d_a, *d_b, *d_c;
-    cudaMalloc(&d_a, size);
-    cudaMalloc(&d_b, size);
-    cudaMalloc(&d_c, size);
+    launch_init(d_f_in);
+    std::cout << "Lattice initialized...\n";
 
-    // Copy to GPU
-    cudaMemcpy(d_a, h_a.data(), size, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b, h_b.data(), size, cudaMemcpyHostToDevice);
+    for (int t = 0; t < STEPS; ++t) {
+        launch_lbm(d_f_in, d_f_out);
+        std::swap(d_f_in, d_f_out);
 
-    // Run!
-    std::cout << "Running Vector Add on RTX 3060..." << std::endl;
-    launch_vector_add(d_a, d_b, d_c, N);
-
-    // Copy back to CPU
-    cudaMemcpy(h_c.data(), d_c, size, cudaMemcpyDeviceToHost);
-
-    // Verify (1.0 + 2.0 should be 3.0)
-    bool success = true;
-    for (int i = 0; i < 10; i++) { // Check first 10
-        if (h_c[i] != 3.0f) success = false;
-        std::cout << h_a[i] << " + " << h_b[i] << " = " << h_c[i] << std::endl;
+        if (t % 1000 == 0) {
+            std::cout << "Step: " << t << "\n";
+        }
     }
 
-    std::cout << (success ? "TEST PASSED!" : "TEST FAILED!") << std::endl;
+    cudaFree(d_f_in);
+    cudaFree(d_f_out);
 
-    cudaFree(d_a); cudaFree(d_b); cudaFree(d_c);
+    // todo: copy back to CPU and write CSV
+    // todo: provide push to fluid
+    // todo: comments (doc, top of file, and inline)
+
     return 0;
 }

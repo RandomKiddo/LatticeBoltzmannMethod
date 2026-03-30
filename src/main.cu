@@ -7,31 +7,54 @@
  * Main simulation runner
  * Validates parameters and manages GPU/CPU transfers.
  */
+/**
+ * Main simulation runner: Kármán Vortex Street
+ * Author: [Your Name]
+ */
 int main() {
-    const int nx = 256;
-    const int ny = 128;
-    const int steps = 5000;
-    const float tau = 0.6f; // Viscosity control
-    size_t mem_size = 9 * nx * ny * sizeof(float);
+    const int nx = 400; // Increased width for better wake development
+    const int ny = 100;
+    const int steps = 15000; // Vortices take time to develop
+    const float tau = 0.6f; 
+    const float force = 0.005f; // Driving force (velocity)
+    size_t f_mem_size = 9 * nx * ny * sizeof(float);
+    size_t mask_mem_size = nx * ny * sizeof(int);
 
-    // Host Memory
-    std::vector<float> h_f(9 * nx * ny, 1.0f / 9.0f); // Initialized to uniform density
-    
-    // Device Memory
+    // 1. Host Memory Setup
+    std::vector<float> h_f(9 * nx * ny, 1.0f / 9.0f);
+    std::vector<int> h_mask(nx * ny, 0);
+
+    // Define the Cylinder Obstacle (Addition from step 2)
+    int cx = nx / 4; 
+    int cy = ny / 2; 
+    int r = ny / 10; 
+    for (int y = 0; y < ny; y++) {
+        for (int x = 0; x < nx; x++) {
+            if ((x - cx)*(x - cx) + (y - cy)*(y - cy) < r * r) {
+                h_mask[y * nx + x] = 1;
+            }
+        }
+    }
+
+    // 2. Device Memory Allocation
     float *d_f1, *d_f2;
-    cudaMalloc(&d_f1, mem_size);
-    cudaMalloc(&d_f2, mem_size);
-    cudaMemcpy(d_f1, h_f.data(), mem_size, cudaMemcpyHostToDevice);
+    int *d_mask;
+    cudaMalloc(&d_f1, f_mem_size);
+    cudaMalloc(&d_f2, f_mem_size);
+    cudaMalloc(&d_mask, mask_mem_size);
+
+    cudaMemcpy(d_f1, h_f.data(), f_mem_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_mask, h_mask.data(), mask_mem_size, cudaMemcpyHostToDevice);
 
     dim3 threadsPerBlock(16, 16);
     dim3 numBlocks((nx + 15) / 16, (ny + 15) / 16);
 
-    std::cout << "Starting LBM simulation on GPU..." << std::endl;
+    std::cout << "Starting Kármán Vortex Street Simulation..." << std::endl;
 
     for (int t = 0; t < steps; t++) {
-        lbm_kernel<<<numBlocks, threadsPerBlock>>>(d_f1, d_f2, nullptr, nx, ny, tau);
+        // Pass the d_mask and force to the updated kernel
+        lbm_kernel<<<numBlocks, threadsPerBlock>>>(d_f1, d_f2, d_mask, nx, ny, tau, force);
         
-        // Swap pointers for next iteration
         float* temp = d_f1;
         d_f1 = d_f2;
         d_f2 = temp;
@@ -39,22 +62,35 @@ int main() {
         if (t % 1000 == 0) std::cout << "Step: " << t << std::endl;
     }
 
-    // Copy result back and save for Validation/Plotting
-    cudaMemcpy(h_f.data(), d_f1, mem_size, cudaMemcpyDeviceToHost);
+    // 3. Data Export (Addition from step 3: Velocity Calculation)
+    cudaMemcpy(h_f.data(), d_f1, f_mem_size, cudaMemcpyDeviceToHost);
     
-    // Inside main.cu - Updated for gnuplot compatibility
-    std::ofstream out("output.dat"); // Use .dat for gnuplot convention
+    std::ofstream out("output.dat");
     for(int y = 0; y < ny; y++) {
         for(int x = 0; x < nx; x++) {
-            float rho = 0;
-            for(int i = 0; i < 9; i++) rho += h_f[i * nx * ny + y * nx + x];
-            out << x << " " << y << " " << rho << "\n"; // Space separated
+            int idx = y * nx + x;
+            float rho = 0, ux = 0, uy = 0;
+
+            if (h_mask[idx] == 1) {
+                // If it's the cylinder, export a 0 velocity or a special marker
+                out << x << " " << y << " " << 0.0 << "\n";
+            } else {
+                for(int i = 0; i < 9; i++) {
+                    float fi = h_f[i * nx * ny + idx];
+                    rho += fi;
+                    ux += fi * CX[i];
+                    uy += fi * CY[i];
+                }
+                // Calculate Velocity Magnitude for visualization
+                float vel = sqrtf((ux/rho)*(ux/rho) + (uy/rho)*(uy/rho));
+                out << x << " " << y << " " << vel << "\n";
+            }
         }
-        out << "\n"; // Blank line after each row for 'splot'
+        out << "\n"; 
     }
     out.close();
 
-    cudaFree(d_f1);
-    cudaFree(d_f2);
+    // Cleanup
+    cudaFree(d_f1); cudaFree(d_f2); cudaFree(d_mask);
     return 0;
 }

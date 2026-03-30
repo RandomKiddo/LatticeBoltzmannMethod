@@ -42,15 +42,17 @@ int main() {
     // Copy result back and save for Validation/Plotting
     cudaMemcpy(h_f.data(), d_f1, mem_size, cudaMemcpyDeviceToHost);
     
-    std::ofstream out("output.csv");
-    out << "x,y,rho\n";
-    for(int y=0; y<ny; y++) {
-        for(int x=0; x<nx; x++) {
+    // Inside main.cu - Updated for gnuplot compatibility
+    std::ofstream out("output.dat"); // Use .dat for gnuplot convention
+    for(int y = 0; y < ny; y++) {
+        for(int x = 0; x < nx; x++) {
             float rho = 0;
-            for(int i=0; i<9; i++) rho += h_f[i * nx * ny + y * nx + x];
-            out << x << "," << y << "," << rho << "\n";
+            for(int i = 0; i < 9; i++) rho += h_f[i * nx * ny + y * nx + x];
+            out << x << " " << y << " " << rho << "\n"; // Space separated
         }
+        out << "\n"; // Blank line after each row for 'splot'
     }
+    out.close();
 
     cudaFree(d_f1);
     cudaFree(d_f2);

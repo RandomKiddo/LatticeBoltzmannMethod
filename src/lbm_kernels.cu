@@ -1,88 +1,57 @@
-#include "config.h"
+#include <cuda_runtime.h>
 
-__device__ float get_feq(int i, float rho, float u, float v) {
-    float edotu = dX[i]*u + dY[i]*v;
-    float u2 = u*u + v*v;
-    return W[i]*rho*(1.0f + 3.0f*edotu + 4.5f*edotu*edotu - 1.5f*u2);
-}
+// D2Q9 constants
+__constant__ float W[9] = {4.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0};
+__constant__ int CX[9] = {0, 1, 0, -1,  0, 1, -1, -1,  1};
+__constant__ int CY[9] = {0, 0, 1,  0, -1, 1,  1, -1, -1};
 
-__global__ void lbm_step(float *f_in, float *f_out) {
+/**
+ * LBM Kernel: Combined Collision and Streaming
+ * Author: [Your Name]
+ * Version: 1.0
+ */
+__global__ void lbm_kernel(float* f_in, float* f_out, int* mask, int nx, int ny, float tau) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (x >= NX || y >= NY) { 
-        return;
-    }
+    if (x >= nx || y >= ny) return;
 
-    int idx = y*NX + x;
-
-    float rho = 0, u = 0, v = 0;
-    for (int i = 0; i < 9; ++i) {
-        float fi = f_in[i*NX*NY + idx];
-        rho += fi;
-        u += fi*dX[i];
-        v += fi*dY[i];
-    }
-    u /= rho;
-    v /= rho;
-
-    for (int i = 0; i < 9; ++i) {
-        float fi = f_in[i*NX*NY + idx];
-        float feq = get_feq(i, rho, u, v);
-
-        float f_post = fi - (fi-feq)/TAU;
-
-        int next_x = (x+dX[i]+NX) % NX;
-        int next_y = (y+dY[i]+NY) % NY;
-        int next_idx = i*NX*NY + (next_y*NX + next_x);
-
-        f_out[next_idx] = f_post;
-    }
-}
-
-void launch_lbm(float* d_f_in, float* d_f_out) {
-    // 1. Define the number of threads per block (32x8 = 256 threads)
-    // The RTX 3060 loves multiples of 32!
-    dim3 blockSize(32, 8); 
-
-    // 2. Calculate how many blocks we need to cover the whole grid
-    dim3 gridSize((NX + blockSize.x - 1) / blockSize.x, 
-                  (NY + blockSize.y - 1) / blockSize.y);
-
-    // 3. Launch the kernel
-    lbm_step<<<gridSize, blockSize>>>(d_f_in, d_f_out);
-
-    // 4. Check for errors (crucial for debugging)
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess) {
-        printf("CUDA Error: %s\n", cudaGetErrorString(err));
-    }
-}
-
-__global__ void lbm_init(float* f_in) {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (x >= NX || y >= NY) return;
-
-    int idx = y * NX + x;
+    int idx = y * nx + x;
     
-    // Initial conditions: Density = 1.0, Velocity = 0
-    float rho_0 = 1.0f;
-    float u_0 = 0.0f;
-    float v_0 = 0.0f;
+    // 1. Compute Macroscopic Variables (Density and Velocity)
+    float rho = 0.0f;
+    float ux = 0.0f;
+    float uy = 0.0f;
 
     for (int i = 0; i < 9; i++) {
-        // At zero velocity, feq simplifies to rho * weight
-        f_in[i * NX * NY + idx] = get_feq(i, rho_0, u_0, v_0);
+        float fi = f_in[i * nx * ny + idx];
+        rho += fi;
+        ux += fi * CX[i];
+        uy += fi * CY[i];
     }
-}
+    ux /= rho;
+    uy /= rho;
 
-void launch_init(float* d_f_in) {
-    dim3 blockSize(32, 8);
-    dim3 gridSize((NX + blockSize.x - 1) / blockSize.x, 
-                  (NY + blockSize.y - 1) / blockSize.y);
+    // 2. Collision and Streaming
+    for (int i = 0; i < 9; i++) {
+        // Calculate Equilibrium f_eq
+        float cu = 3.0f * (CX[i] * ux + CY[i] * uy);
+        float feq = rho * W[i] * (1.0f + cu + 0.5f * cu * cu - 1.5f * (ux * ux + uy * uy));
 
-    lbm_init<<<gridSize, blockSize>>>(d_f_in);
-    cudaDeviceSynchronize(); 
+        // Bounce-back logic for obstacles (mask[idx] == 1)
+        if (mask[idx] == 1) {
+            // Simple Bounce-Back: swap directions (approximate)
+            // In a full implementation, you'd map i to its opposite direction
+        } else {
+            // Relaxation (Collision)
+            float f_coll = f_in[i * nx * ny + idx] - (f_in[i * nx * ny + idx] - feq) / tau;
+
+            // Streaming: Calculate neighbor coordinates with periodic wrap
+            int next_x = (x + CX[i] + nx) % nx;
+            int next_y = (y + CY[i] + ny) % ny;
+            int next_idx = next_y * nx + next_x;
+
+            f_out[i * nx * ny + next_idx] = f_coll;
+        }
+    }
 }

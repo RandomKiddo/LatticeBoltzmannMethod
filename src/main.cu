@@ -3,6 +3,10 @@
 #include <vector>
 #include "lbm_kernels.cu"
 
+const int CPU_CX[9] = {0, 1, 0, -1, 0, 1, -1, -1, 1};
+const int CPU_CY[9] = {0, 0, 1, 0, -1, 1, 1, -1, -1};
+const float CPU_W[9] = {4.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0};
+
 /**
  * Main simulation runner
  * Validates parameters and manages GPU/CPU transfers.
@@ -14,19 +18,27 @@
 int main() {
     const int nx = 400; // Increased width for better wake development
     const int ny = 100;
-    const int steps = 15000; // Vortices take time to develop
+    const int steps = 100000; // Vortices take time to develop
     const float tau = 0.6f; 
     const float force = 0.005f; // Driving force (velocity)
     size_t f_mem_size = 9 * nx * ny * sizeof(float);
     size_t mask_mem_size = nx * ny * sizeof(int);
 
     // 1. Host Memory Setup
-    std::vector<float> h_f(9 * nx * ny, 1.0f / 9.0f);
+    std::vector<float> h_f(9 * nx * ny);
     std::vector<int> h_mask(nx * ny, 0);
+    
+    for (int i = 0; i < 9; ++i) {
+    	float cu = 3.0f*(CPU_CX[i]*force);
+    	float feq = CPU_W[i]*(1.0f+cu+0.5f*cu*cu-1.5f*(force*force));
+    	for (int j = 0; j < nx*ny; ++j) {
+    		h_f[i*nx*ny + j] = feq;
+    	}
+    }
 
     // Define the Cylinder Obstacle (Addition from step 2)
     int cx = nx / 4; 
-    int cy = ny / 2; 
+    int cy = (ny / 2) + 1; 
     int r = ny / 10; 
     for (int y = 0; y < ny; y++) {
         for (int x = 0; x < nx; x++) {
@@ -78,8 +90,8 @@ int main() {
                 for(int i = 0; i < 9; i++) {
                     float fi = h_f[i * nx * ny + idx];
                     rho += fi;
-                    ux += fi * CX[i];
-                    uy += fi * CY[i];
+                    ux += fi * CPU_CX[i];
+                    uy += fi * CPU_CY[i];
                 }
                 // Calculate Velocity Magnitude for visualization
                 float vel = sqrtf((ux/rho)*(ux/rho) + (uy/rho)*(uy/rho));

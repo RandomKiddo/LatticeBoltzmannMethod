@@ -1,6 +1,6 @@
 # Lattice Boltzmann Method
 
-A C++/CUDA implementation of the Lattice Boltzmann Method for computational fluid dynamics (CFD), utilzing an NVIDIA H100 GPU on a high-performance computing (HPC) resource and its proprietary CUDA packages (like NVCC). 
+A C++/CUDA/NVCC implementation of the Lattice Boltzmann Method for computational fluid dynamics (CFD), utilizing an NVIDIA H100 GPU on a high-performance computing (HPC) resource, with provided Makefiles and executables.
 
 ![GitHub License](https://img.shields.io/github/license/RandomKiddo/LatticeBoltzmannMethod)
 ![GitHub language count](https://img.shields.io/github/languages/count/RandomKiddo/LatticeBoltzmannMethod)

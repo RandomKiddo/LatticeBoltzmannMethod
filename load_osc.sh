@@ -12,13 +12,12 @@
 # Run with "sh load_osc.sh"
 # --------------------------------------------------------
 
-set -x
-
 # Load the CUDA module.
 module load cuda/12.8.1
 
+# Load Miniconda.
+module load miniconda3/24.1.2-py310
+
 # Test that NVCC is active.
 nvcc --version
-
-set +x
 

@@ -1,3 +1,0 @@
-C:/Users/nghug/Desktop/LatticeBoltzmannMethod/build/CMakeFiles/LBM_Solver.dir
-C:/Users/nghug/Desktop/LatticeBoltzmannMethod/build/CMakeFiles/ALL_BUILD.dir
-C:/Users/nghug/Desktop/LatticeBoltzmannMethod/build/CMakeFiles/ZERO_CHECK.dir

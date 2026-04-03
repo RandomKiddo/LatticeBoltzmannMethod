@@ -18,6 +18,7 @@
 #include <fstream>
 #include <cuda_runtime.h>
 #include "lbm_kernels.cu"
+#include <yaml-cpp/yaml.h>
 
 // CPU-side constants for initialization and data export
 const int CPU_CX[9] = {0, 1, 0, -1, 0, 1, -1, -1, 1};
@@ -81,6 +82,7 @@ int main() {
     std::cout << "Starting Simulation for " << steps << " steps..." << std::endl;
 
     // 5. Main Simulation Loop
+    std::ofstream out("output.dat");
     for (int t = 0; t <= steps; t++) {
         lbm_kernel<<<numBlocks, threadsPerBlock>>>(d_f1, d_f2, d_mask, nx, ny, tau, u_inlet);
         
@@ -92,20 +94,48 @@ int main() {
         if (t % 1000 == 0) {
             std::cout << "Step: " << t << std::endl;
         }
+        if (t % 200 == 0) {
+            cudaMemcpy(h_f.data(), d_f1, f_size, cudaMemcpyDeviceToHost);
+            for (int y = 0; y < ny; ++y) {
+            	for (int x = 0; x < nx; ++x) {
+            	    int idx = y * nx + x;
+            
+		    if (h_mask[idx] == 1) {
+			// Inside the cylinder: Force velocity to 0 for visualization
+			out << x << " " << y << " " << 0.0 << "\n";
+		    } else {
+			float rho = 0, ux = 0, uy = 0;
+			for(int i = 0; i < 9; i++) {
+			    float fi = h_f[i * nx * ny + idx];
+			    rho += fi;
+			    ux += fi * CPU_CX[i];
+			    uy += fi * CPU_CY[i];
+			}
+			// Normalize by density
+			ux /= rho;
+			uy /= rho;
+			
+			float vel_mag = sqrtf(ux*ux + uy*uy);
+			out << x << " " << y << " " << vel_mag << "\n";
+		    }
+            	}
+            }
+        }
     }
+    out.close();
 
     // 6. Data Export
     std::cout << "Exporting to output.dat..." << std::endl;
     cudaMemcpy(h_f.data(), d_f1, f_size, cudaMemcpyDeviceToHost);
     
-    std::ofstream out("output.dat");
+    std::ofstream out2("output2.dat");
     for(int y = 0; y < ny; y++) {
         for(int x = 0; x < nx; x++) {
             int idx = y * nx + x;
             
             if (h_mask[idx] == 1) {
                 // Inside the cylinder: Force velocity to 0 for visualization
-                out << x << " " << y << " " << 0.0 << "\n";
+                out2 << x << " " << y << " " << 0.0 << "\n";
             } else {
                 float rho = 0, ux = 0, uy = 0;
                 for(int i = 0; i < 9; i++) {
@@ -119,12 +149,12 @@ int main() {
                 uy /= rho;
                 
                 float vel_mag = sqrtf(ux*ux + uy*uy);
-                out << x << " " << y << " " << vel_mag << "\n";
+                out2 << x << " " << y << " " << vel_mag << "\n";
             }
         }
-        out << "\n"; // Newline for gnuplot pm3d
+        out2 << "\n"; // Newline for gnuplot pm3d
     }
-    out.close();
+    out2.close();
 
     // Cleanup
     cudaFree(d_f1);

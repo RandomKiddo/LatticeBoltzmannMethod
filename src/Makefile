@@ -17,8 +17,9 @@
 # This needs to be active in your current shell.
 # For OSC usage with Cardinal, use the included "load_osc.sh" file.
 # This will load CUDA, which comes with NVCC.
+# We use sm_90 architecture for our NVIDIA H100 GPU.
 NVCC = nvcc
-CFLAGS = -O3 -arch=sm_70 
+CFLAGS = -O3 -arch=sm_90 -ILibYAML/include -LLibYAML/lib64 -lyaml-cpp
 
 all: lbm_solver
 
@@ -33,6 +34,6 @@ plot: lbm_solver
 	@echo "Plot saved as density_map.png"
 
 # Clean the working directory.
-# ! Deletes all .dat and .png files too!
+# ! Deletes all .dat, .mp4, and .png files too!
 clean:
-	rm -f lbm_solver *.dat *.png
+	rm -f lbm_solver *.dat *.png *.mp4

@@ -1,0 +1,14 @@
+# todo comments
+domain:
+  nx: 400
+  ny: 100
+
+physics:
+  tau: 0.6
+  u_inlet: 0.1
+  steps: 100000
+
+output:
+  filename: "vortex_street.dat"
+  interval: 200
+

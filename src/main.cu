@@ -1,3 +1,17 @@
+/**
+ * File: main.cu
+ * 
+ * Program that runs the LBM solver on a GPU.
+ * 
+ * Programmer: Neil Ghugare ghugare.1@osu.edu
+ * 
+ * Revision History:
+ *      04/02/2026 Initial version with Karman Vortex Street.
+ * 
+ * Notes:
+ * Use Makefile to get executable to run.
+ */
+
 #include <iostream>
 #include <vector>
 #include <cmath>

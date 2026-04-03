@@ -1,3 +1,17 @@
+/**
+ * File: lbm_kernels.cu
+ * 
+ * The LBM kernel logic for the simulation.
+ * 
+ * Programmer: Neil Ghugare ghugare.1@osu.edu
+ * 
+ * Revision History:
+ *      04/02/2026 Initial version with Karman Vortex Street.
+ * 
+ * Notes:
+ * Use Makefile to get executable to run.
+ */
+
 #include <cuda_runtime.h>
 
 __constant__ float W[9] = {4.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0};

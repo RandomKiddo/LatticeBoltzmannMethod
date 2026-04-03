@@ -1,6 +1,6 @@
 # Lattice Boltzmann Method
 
-A C++ implementation of the Lattice Boltzmann Method for computational fluid dynamics (CFD), utilzing an NVIDIA RTX 3060 GPU and its proprietary CUDA packages. 
+A C++/CUDA implementation of the Lattice Boltzmann Method for computational fluid dynamics (CFD), utilzing an NVIDIA H100 GPU on a high-performance computing (HPC) center and its proprietary CUDA packages (like NVCC). 
 
 ![GitHub License](https://img.shields.io/github/license/RandomKiddo/LatticeBoltzmannMethod)
 ![GitHub language count](https://img.shields.io/github/languages/count/RandomKiddo/LatticeBoltzmannMethod)
@@ -13,4 +13,4 @@ A C++ implementation of the Lattice Boltzmann Method for computational fluid dyn
 
 ___
 
-<sub>This page was last edited on 03.06.2026</sub>
+<sub>This page was last edited on 04.02.2026</sub>

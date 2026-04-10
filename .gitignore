@@ -6,3 +6,6 @@
 
 # Data Files
 *.dat
+
+# Cache
+*/__pycache__/

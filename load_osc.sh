@@ -26,4 +26,10 @@ module load miniconda3/24.1.2-py310
 # Test that NVCC is active.
 nvcc --version
 
+# Check which modules are loaded.
+module list
+
+# Activate conda (lbm) or create it if it doesn't exist.
+conda env list | grep -q "lbm" && conda activate lbm || conda env create -f environment.yml 
+
 echo "Setup finished!"

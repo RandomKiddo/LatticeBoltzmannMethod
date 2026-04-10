@@ -1,1 +1,2 @@
 * text=auto
+*.hpp linguist-detectable=false

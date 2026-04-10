@@ -19,7 +19,7 @@
 # This will load CUDA, which comes with NVCC.
 # We use sm_90 architecture for our NVIDIA H100 GPU.
 NVCC = nvcc
-CFLAGS = -O3 -arch=sm_90 -ILibYAML/include -LLibYAML/lib64 -lyaml-cpp
+CFLAGS = -O3 -arch=sm_90
 
 all: lbm_solver
 

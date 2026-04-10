@@ -1,0 +1,15 @@
+{
+    "domain": {
+        "nx": 800,
+        "ny": 200
+    },
+    "physics": {
+        "tau": 0.6,
+        "u_inlet": 0.1,
+        "steps": 100000
+    },
+    "output": {
+        "base_filename": "vortex_street",
+        "interval": 200
+    }
+}

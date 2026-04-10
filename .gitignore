@@ -1,8 +1,8 @@
 # MacOS
 *.DS_Store
 
-# LibYAML
-*/yaml-cpp/
-
 # Visualizations
 *.mp4
+
+# Data Files
+*.dat

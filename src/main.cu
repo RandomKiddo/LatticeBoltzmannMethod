@@ -7,6 +7,7 @@
  * 
  * Revision History:
  *      04/02/2026 Initial version with Karman Vortex Street.
+ *      04/10/2026 Updated version to work with .json simulation input and Strouhal probing.
  * 
  * Notes:
  * Use Makefile to get executable to run.
@@ -18,7 +19,13 @@
 #include <fstream>
 #include <cuda_runtime.h>
 #include "lbm_kernels.cu"
-#include <yaml-cpp/yaml.h>
+#include "json.hpp"
+#include <sstream>
+
+// todo better comments
+
+// For easier usage of JSON reading
+using json = nlohmann::json;
 
 // CPU-side constants for initialization and data export
 const int CPU_CX[9] = {0, 1, 0, -1, 0, 1, -1, -1, 1};
@@ -26,12 +33,17 @@ const int CPU_CY[9] = {0, 0, 1, 0, -1, 1, 1, -1, -1};
 const float CPU_W[9] = {4.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0};
 
 int main() {
+    std::ifstream fin("config.json");
+    json data = json::parse(fin);
+
     // 1. Simulation Parameters
-    const int nx = 400;
-    const int ny = 100;
-    const int steps = 20000; 
-    const float tau = 0.6f;      // Kinematic viscosity = (tau - 0.5)/3
-    const float u_inlet = 0.1f;  // Inlet velocity magnitude
+    const int nx = data["domain"]["nx"];
+    const int ny = data["domain"]["ny"];
+    const int steps = data["physics"]["steps"]; 
+    const float tau = data["physics"]["tau"];      // Kinematic viscosity = (tau - 0.5)/3
+    const float u_inlet = data["physics"]["u_inlet"];  // Inlet velocity magnitude
+    const int interval = data["output"]["interval"];
+    const std::string base_filename = data["output"]["base_filename"];
     
     size_t f_size = 9 * nx * ny * sizeof(float);
     size_t mask_size = nx * ny * sizeof(int);
@@ -82,7 +94,22 @@ int main() {
     std::cout << "Starting Simulation for " << steps << " steps..." << std::endl;
 
     // 5. Main Simulation Loop
-    std::ofstream out("output.dat");
+    std::stringstream ss;
+    ss << base_filename << "_" << nx << "x" << ny << "_tau" << tau << "_uinlet" << u_inlet
+       << ".dat";
+    std::ofstream out(ss.str());
+    
+    out << "# Main data file for LBM Karman Vortex Street Simulation for visualize.py Animation\n"
+        << "# x  y  velocity_magnitude\n";
+        
+    std::stringstream ss2;
+    ss2 << base_filename << "_" << nx << "x" << ny << "_tau" << tau << "_uinlet" << u_inlet
+       << "_PROBE.dat";
+    std::ofstream probe_file(ss2.str());
+    
+    probe_file << "# Probe data file for LBM Karman Vortex Street Simulation for Strouhal Number.\n"
+        << "# t	    uy/rho \n";
+    
     for (int t = 0; t <= steps; t++) {
         lbm_kernel<<<numBlocks, threadsPerBlock>>>(d_f1, d_f2, d_mask, nx, ny, tau, u_inlet);
         
@@ -94,7 +121,7 @@ int main() {
         if (t % 1000 == 0) {
             std::cout << "Step: " << t << std::endl;
         }
-        if (t % 200 == 0) {
+        if (t % interval == 0) {
             cudaMemcpy(h_f.data(), d_f1, f_size, cudaMemcpyDeviceToHost);
             for (int y = 0; y < ny; ++y) {
             	for (int x = 0; x < nx; ++x) {
@@ -121,14 +148,35 @@ int main() {
             	}
             }
         }
+        if (t > 5000) {
+        	int probe_x = nx/2;
+        	int probe_y = ny/2;
+        	int idx = probe_y*nx + probe_x;
+        	
+        	float rho = 0, uy = 0;
+        	for (int i = 0; i < 9; ++i) {
+        		float fi = h_f[i*nx*ny + idx];
+        		rho += fi;
+        		uy += fi*CPU_CY[i];
+        	}
+        	probe_file << t << " " << (uy/rho) << "\n";
+        }
     }
     out.close();
 
     // 6. Data Export
-    std::cout << "Exporting to output.dat..." << std::endl;
+    std::cout << "Exporting animation data to " << ss.str() << "\n";
+    std::cout << "Exporting probe data to " << ss2.str() << "\n";
     cudaMemcpy(h_f.data(), d_f1, f_size, cudaMemcpyDeviceToHost);
     
-    std::ofstream out2("output2.dat");
+    std::stringstream ss3;
+    ss3 << base_filename << "_" << nx << "x" << ny << "_tau" << tau << "_uinlet" << u_inlet
+       << "_LASTSTEP.dat";
+    std::ofstream out2(ss3.str());
+    
+    out2 << "# Last step data file for LBM Karman Vortex Street Simulation for Final Position GNUPlot\n"
+        << "# x  y  velocity_magnitude\n";
+    
     for(int y = 0; y < ny; y++) {
         for(int x = 0; x < nx; x++) {
             int idx = y * nx + x;
@@ -155,6 +203,8 @@ int main() {
         out2 << "\n"; // Newline for gnuplot pm3d
     }
     out2.close();
+    
+    std::cout << "Exporting last step data to " << ss3.str() << "\n";
 
     // Cleanup
     cudaFree(d_f1);

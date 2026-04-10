@@ -1,3 +1,2 @@
-YAML File Usage
-Comments
-Conda YAML and setup in load_osc
+Comments (everywhere, and in JSON and other files! Just check all files!)
+Load conda and environment automatically in load_osc.sh

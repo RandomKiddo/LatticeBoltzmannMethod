@@ -1,2 +1,2 @@
 Comments (everywhere, and in JSON and other files! Just check all files!)
-Load conda and environment automatically in load_osc.sh
+Specifically cu comments need to be done and strouhal.py 

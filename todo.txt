@@ -1,2 +1,1 @@
-Comments (everywhere, and in JSON and other files! Just check all files!)
-Specifically cu comments need to be done and strouhal.py 
+Comments in strouhal, json, and more!

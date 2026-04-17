@@ -107,7 +107,7 @@ if __name__ == '__main__':
 	parser.add_argument('--config', type=str, help='Path to JSON config file.', default='config.json')
 	parser.add_argument('--output', type=str, help='Path and filename of output visualization.', default='vortex_street.mp4')
 	
-	# Parse the command line arguments
+	# Parse the command line arguments.
 	args = parser.parse_args()
 
 	# Load the JSON config file (this is from helper.py).

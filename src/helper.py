@@ -62,7 +62,7 @@ def assemble_data_filename(base: str, nx: int, ny: int, tau: float, u_inlet: flo
 	5. u_inlet - The inlet velocity parameter.
 	
 	Arguments (optional)
-	1. addendum - The addendum to the file name, like 'PROBE'.
+	1. addendum - The addendum to the file name, like '_PROBE'.
 
 	Returns
 	The .dat filename.

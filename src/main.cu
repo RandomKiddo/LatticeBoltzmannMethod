@@ -34,7 +34,10 @@ const int CPU_CX[9] = {0, 1, 0, -1, 0, 1, -1, -1, 1};
 const int CPU_CY[9] = {0, 0, 1, 0, -1, 1, 1, -1, -1};
 const float CPU_W[9] = {4.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0};
 
-int main() {
+/**
+ * Main function that dictates how the simulation runs and what it outputs. 
+ */
+int main(void) {
     /*
     --- 1. Configuration and Hyperparameters ---
     */

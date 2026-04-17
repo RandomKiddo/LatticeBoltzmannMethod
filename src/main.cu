@@ -64,8 +64,8 @@ int main() {
                             // ! Perfect symmetric flow might delay vortex shredding indefinitely.
     int r = ny / 10;        // Cylinder radius is 10% of domain height.
 
-    for (int y = 0; y < ny; y++) {
-        for (int x = 0; x < nx; x++) {
+    for (int y = 0; y < ny; ++y) {
+        for (int x = 0; x < nx; ++x) {
             int idx = y * nx + x;
             
             // Define solid boundary (the cylinder).
@@ -76,7 +76,7 @@ int main() {
             // Initialization: Fill fluid with equilibrium distribution based on u_inlet.
             // This prevents a "shock" at t=0 by assuming fluid is already moving.
             float u2 = u_inlet * u_inlet;
-            for (int i = 0; i < 9; i++) {
+            for (int i = 0; i < 9; ++i) {
                 float cu = 3.0f * (CPU_CX[i] * u_inlet);
                 h_f[i * nx * ny + idx] = CPU_W[i] * 1.0f * (1.0f + cu + 0.5f * cu * cu - 1.5f * u2);
             }
@@ -130,7 +130,7 @@ int main() {
     /*
     --- 5. Simulation Loop ---
     */
-    for (int t = 0; t <= steps; t++) {
+    for (int t = 0; t <= steps; ++t) {
         // Run LBM Kernel.
         lbm_kernel<<<numBlocks, threadsPerBlock>>>(d_f1, d_f2, d_mask, nx, ny, tau, u_inlet);
         
@@ -160,7 +160,7 @@ int main() {
                         out << x << " " << y << " " << 0.0 << "\n";
                     } else {
                         float rho = 0, ux = 0, uy = 0;
-                        for(int i = 0; i < 9; i++) {
+                        for(int i = 0; i < 9; ++i) {
                             float fi = h_f[i * nx * ny + idx];
                             rho += fi;
                             ux += fi * CPU_CX[i];
@@ -178,6 +178,7 @@ int main() {
         }
 
         // Strouhal probing: start recording frequency after flow stabilizes (t>5000).
+        /* ! Temporary commenting out
         if (t > 5000) {
         	int probe_x = nx/2;     // Middle of the wake.
         	int probe_y = ny/2;
@@ -193,6 +194,32 @@ int main() {
         	}
         	probe_file << t << " " << (uy/rho) << "\n";
         }
+        */
+       // todo test comments
+       if (t > 5000) {
+            int probe_x = nx/2;
+            int probe_y = ny/2;
+            int idx = probe_y*nx + probe_x;
+
+            float f_local[9];
+
+            for (int i = 0; i < 9; ++i) {
+                float *d_ptr = d_f1 + (i*nx*ny) + idx;
+
+                cudaMemcpy(&local_f[i], d_ptr, sizeof(float), cudaMemcpyDeviceToHost);
+            }
+
+            float rho = 0.0f;
+            float uy = 0.0f;
+            for (int i = 0; i < 9; ++i) {
+                rho += f_local[i];
+                uy += local_f[i]*CPU_CY[i];
+            }
+
+            if (rho > 0.001f) {
+                probe_file << t << " " << (uy/rho) << "\n";
+            }
+       }
     }
     out.close();
 
@@ -214,8 +241,8 @@ int main() {
         << "# x  y  velocity_magnitude\n";
     
     // Loop and output the last state of the system, as prior.
-    for(int y = 0; y < ny; y++) {
-        for(int x = 0; x < nx; x++) {
+    for(int y = 0; y < ny; ++y) {
+        for(int x = 0; x < nx; ++x) {
             int idx = y * nx + x;
             
             if (h_mask[idx] == 1) {
@@ -223,7 +250,7 @@ int main() {
                 out2 << x << " " << y << " " << 0.0 << "\n";
             } else {
                 float rho = 0, ux = 0, uy = 0;
-                for(int i = 0; i < 9; i++) {
+                for(int i = 0; i < 9; ++i) {
                     float fi = h_f[i * nx * ny + idx];
                     rho += fi;
                     ux += fi * CPU_CX[i];

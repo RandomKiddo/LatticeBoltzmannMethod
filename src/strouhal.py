@@ -55,6 +55,29 @@ def calculate_strouhal(filename: str, ny: int, u_inlet: float) -> float:
 	# Return the Strouhal number.
 	return (f_lattice * 2*r / u_max)
 
+def calculate_reynolds(ny: int, u_inlet: float, tau: float) -> float:
+	"""
+	Calculates the Reynolds number for the simulation.
+
+	Arguments (required)
+	1. ny - The number of y-direction cells.
+	2. u_inlet - The inlet flow velocity.
+	3. tau - The relaxation time.
+
+	Arguments (optional)
+	None
+
+	Returns
+	The Reynolds number. 
+	"""
+
+	# Radius of the cylinder and lattice viscosity. 
+	r = ny//10
+	nu = (1.0/3.0) * (tau-0.5)
+
+	# Return the Reynolds number.
+	return (u_inlet*2*r)/nu
+
 # If we are running this file...
 if __name__ == '__main__':
 	# Command line argument parsing for the JSON config file and the output file name.
@@ -81,4 +104,7 @@ if __name__ == '__main__':
 	
 	# Output the Strouhal number to the console.
 	print(f'Strouhal Number: {calculate_strouhal(filename, ny, u_inlet):.6f}')
+
+	# Calculate the Reynolds number as well to the console.
+	print(f'Reynolds Number: {calculate_reynolds(ny, u_inlet, tau):.4f}')
 

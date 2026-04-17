@@ -36,7 +36,7 @@ def load_frames(file_path: str) -> np.array:
 	The array of frames.
 	"""
 	
-	# Load the data
+	# Load the data.
 	data = np.loadtxt(file_path)
 	
 	# The number of data points per frame and calculate the # of frames.

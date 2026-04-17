@@ -35,4 +35,4 @@ set cbrange [0:0.15]              # Limits color scale to highlight swirls.
 
 # --- 5. The Plot Command --- 
 # 'pm3d' creates the smooth color map.
-splot "output.dat" using 1:2:3 with pm3d title "Fluid Wake"  # Update .dat file as needed. 
+splot "vortex_street_1000x250_tau0.6_uinlet0.1_LASTSTEP.dat" using 1:2:3 with pm3d title "Fluid Wake"  # Update .dat file as needed. 

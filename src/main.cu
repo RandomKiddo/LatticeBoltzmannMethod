@@ -24,7 +24,7 @@
 #include "json.hpp"         // Include for flexible simulation config.
 #include <sstream>
 
-// For easier usage of JSON reading
+// For easier usage of JSON reading.
 using json = nlohmann::json;
 
 // CPU-side constants for initialization and data export.
@@ -248,7 +248,7 @@ int main() {
             int idx = y * nx + x;
             
             if (h_mask[idx] == 1) {
-                // Inside the cylinder: Force velocity to 0 for visualization
+                // Inside the cylinder: Force velocity to 0 for visualization.
                 out2 << x << " " << y << " " << 0.0 << "\n";
             } else {
                 float rho = 0, ux = 0, uy = 0;
@@ -258,7 +258,7 @@ int main() {
                     ux += fi * CPU_CX[i];
                     uy += fi * CPU_CY[i];
                 }
-                // Normalize by density
+                // Normalize by density.
                 ux /= rho;
                 uy /= rho;
                 
@@ -266,7 +266,7 @@ int main() {
                 out2 << x << " " << y << " " << vel_mag << "\n";
             }
         }
-        out2 << "\n"; // Newline for gnuplot pm3d
+        out2 << "\n"; // Newline for gnuplot pm3d.
     }
     out2.close();
     

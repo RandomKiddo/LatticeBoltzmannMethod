@@ -8,9 +8,11 @@
  * Revision History:
  *      04/02/2026 Initial version with Karman Vortex Street.
  *      04/10/2026 Updated version to work with .json simulation input and Strouhal probing.
+ *      04/27/2026 Probe optimizations.
  * 
  * Notes:
  * Use Makefile to get executable to run.
+ * Makefile can be used with "make -f Makefile".
  */
 
 #include <iostream>

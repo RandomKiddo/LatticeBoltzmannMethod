@@ -5,7 +5,8 @@
 # Programmer: Neil Ghugare ghugare.1@osu.edu
 #
 # Revision History:
-#   04/17/2026 Initial version with comments.
+#   04/16/2026 Initial version with comments.
+#   04/17/2026 Domain and styling fixes.
 #
 # Notes:
 # Run with "gnuplot" and then "load plot_vortex.plt".
@@ -29,10 +30,10 @@ set key outside                   # Ensures legend doesn't overlap data
 
 # --- 4. Range Adjustments ---
 # Adjust these based on nx and ny.
-set xrange [0:400]
-set yrange [0:100]
+set xrange [0:1500]
+set yrange [0:375]
 set cbrange [0:0.15]              # Limits color scale to highlight swirls.
 
 # --- 5. The Plot Command --- 
 # 'pm3d' creates the smooth color map.
-splot "vortex_street_1000x250_tau0.6_uinlet0.1_LASTSTEP.dat" using 1:2:3 with pm3d title "Fluid Wake"  # Update .dat file as needed. 
+splot "vortex_street_1000x250_tau0.6_uinlet0.1_LASTSTEP.dat" using 1:2:3 with pm3d  # Update .dat file as needed. 

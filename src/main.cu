@@ -182,26 +182,9 @@ int main(void) {
             }
         }
 
-        // Strouhal probing: start recording frequency after flow stabilizes (t>5000).
-        /* ! Temporary commenting out
+
+        // todo test comments
         if (t > 5000) {
-        	int probe_x = nx/2;     // Middle of the wake.
-        	int probe_y = ny/2;
-        	int idx = probe_y*nx + probe_x;
-        	
-            // * Note: We pull the whole host array just for one point.
-            // * In a high-perf version, you may want to use cudaMemcpy of just 9 floats.
-        	float rho = 0, uy = 0;
-        	for (int i = 0; i < 9; ++i) {
-        		float fi = h_f[i*nx*ny + idx];
-        		rho += fi;
-        		uy += fi*CPU_CY[i];
-        	}
-        	probe_file << t << " " << (uy/rho) << "\n";
-        }
-        */
-       // todo test comments
-       if (t > 5000) {
             int probe_x = nx/2;
             int probe_y = ny/2;
             int idx = probe_y*nx + probe_x;
@@ -211,20 +194,20 @@ int main(void) {
             for (int i = 0; i < 9; ++i) {
                 float *d_ptr = d_f1 + (i*nx*ny) + idx;
 
-                cudaMemcpy(&local_f[i], d_ptr, sizeof(float), cudaMemcpyDeviceToHost);
+                cudaMemcpy(&f_local[i], d_ptr, sizeof(float), cudaMemcpyDeviceToHost);
             }
 
             float rho = 0.0f;
             float uy = 0.0f;
             for (int i = 0; i < 9; ++i) {
                 rho += f_local[i];
-                uy += local_f[i]*CPU_CY[i];
+                uy += f_local[i]*CPU_CY[i];
             }
 
             if (rho > 0.001f) {
                 probe_file << t << " " << (uy/rho) << "\n";
             }
-       }
+        }
     }
     out.close();
 

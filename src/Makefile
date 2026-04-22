@@ -6,7 +6,8 @@
 # Programmer: Neil Ghugare	ghugare.1@osu.edu
 #
 # Revision History:
-# 	04/02/2025 Initial version with NVCC.
+# 	04/02/2026 Initial version with NVCC.
+#	04/22/2026 Update for .bin files.
 #
 # Notes:
 # Compile with "make -f Makefile".
@@ -34,6 +35,9 @@ plot: lbm_solver
 	@echo "Plot saved as density_map.png"
 
 # Clean the working directory.
-# ! Deletes all .dat, .mp4, and .png files too!
+# ! Deletes all .dat, .bin, .mp4, and .png files too!
 clean:
-	rm -f lbm_solver *.dat *.png *.mp4
+	rm -f lbm_solver *.dat *.png *.mp4 *.bin
+
+new:
+	rm -f lbm_solver

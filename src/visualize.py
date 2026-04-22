@@ -8,6 +8,7 @@ Programmer: Neil Ghugare ghugare.1@osu.edu
 Revision History:
 	04/15/2026 Initial version with comments.
 	04/22/2026 Update visualizations for .bin instead of .dat files.
+	04/22/2026 Styling updates for plotting.
 
 Notes:
 Best method to run is "python visualize.py" in the command line.
@@ -24,24 +25,23 @@ from helper import *        # From helper.py file.
 
 # Matplotlib styling updates.
 plt.rcParams.update({
-    "text.usetex": True,                                                # Use LaTeX.
-    "font.size": 25,
-    "font.family": "serif",
-    "font.serif": ["Nimbus Roman", "Times New Roman", "Times"],
-    "axes.labelsize": 25,                                               # Slightly larger labels for clarity.
-    "mathtext.fontset": "stix",                                         # Better fontset matching via Stix.
+    	# Text styling (LaTeX and Stix font). 
+    	"text.usetex": True,                                                
+    	"font.family": "serif",
+    	"font.serif": ["Nimbus Roman", "Times New Roman", "Times"],
+    	"mathtext.fontset": "stix",                                         
     
-    # X-axis ticks
-    "xtick.major.size": 7,     
-    "xtick.major.width": 1,
-    "xtick.minor.size": 3,      
-    "xtick.minor.width": 1,     
+	# X-axis ticks
+	"xtick.major.size": 7,     
+        "xtick.major.width": 1,
+        "xtick.minor.size": 3,      
+        "xtick.minor.width": 1,     
     
-    # Y-axis ticks
-    "ytick.major.size": 7,      
-    "ytick.major.width": 1,       
-    "ytick.minor.size": 3,       
-    "ytick.minor.width": 1
+        # Y-axis ticks
+    	"ytick.major.size": 7,      
+    	"ytick.major.width": 1,       
+    	"ytick.minor.size": 3,       
+    	"ytick.minor.width": 1
 })
 
 @timefn
@@ -93,10 +93,10 @@ def make_animation(all_frames: np.array, output: str) -> None:
 			vmin=0, vmax=0.15)
 	
 	# Add a colorbar and format properly.
-	fig.colorbar(img, label='Velocity Magnitude')
-	ax.set_title('Karman Vortex Street Evolution')
-	ax.set_xlabel('x')
-	ax.set_ylabel('y')
+	fig.colorbar(img, label=r'Velocity Magnitude ($u$)')
+	ax.set_title('Kármán Vortex Street Evolution')
+	ax.set_xlabel('Lattice X')
+	ax.set_ylabel('Lattice Y')
 	
 	# Update function to update the plot.
 	def update(frame_idx: int) -> Any:

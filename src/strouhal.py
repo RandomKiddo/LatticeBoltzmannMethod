@@ -49,7 +49,7 @@ def calculate_strouhal(filename: str, ny: int, u_inlet: float) -> float:
 	f_lattice = freqs[idx]
 
 	# The radius of the cylinder and the maximum velocity.
-	r = ny//10
+	r = ny//40
 	u_max = u_inlet * (ny/(ny-2*r))
 
 	# Return the Strouhal number.
@@ -72,7 +72,7 @@ def calculate_reynolds(ny: int, u_inlet: float, tau: float) -> float:
 	"""
 
 	# Radius of the cylinder and lattice viscosity. 
-	r = ny//10
+	r = ny//40
 	nu = (1.0/3.0) * (tau-0.5)
 
 	# Return the Reynolds number.

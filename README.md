@@ -1,6 +1,6 @@
 # Lattice Boltzmann Method
 
-A C++/CUDA/NVCC implementation of the Lattice Boltzmann Method for computational fluid dynamics (CFD), utilizing an NVIDIA H100 GPU on a high-performance computing (HPC) resource, with provided Makefiles and executables.
+A C++/CUDA/NVCC implementation of the Lattice Boltzmann Method for computational fluid dynamics (CFD), utilizing an NVIDIA H100 GPU on a high-performance computing (HPC) resource, with provided Makefiles and executables. Specifically, we investigate the [Kármán Vortex Street](https://en.wikipedia.org/wiki/K%C3%A1rm%C3%A1n_vortex_street).
 
 ![GitHub License](https://img.shields.io/github/license/RandomKiddo/LatticeBoltzmannMethod)
 ![GitHub language count](https://img.shields.io/github/languages/count/RandomKiddo/LatticeBoltzmannMethod)
@@ -88,5 +88,9 @@ This project utilizes [Nlohmann's JSON C++ package](https://github.com/nlohmann/
 It is licensed by the MIT License: `Copyright © 2013-2026 Niels Lohmann`.
 
 ___
+
+<br />
+
+[Back to Top](#lattice-boltzmann-method)
 
 <sub>This page was last edited on 04.22.2026</sub>

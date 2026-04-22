@@ -37,11 +37,11 @@ plt.rcParams.update({
         "xtick.minor.size": 3,      
         "xtick.minor.width": 1,     
     
-        # Y-axis ticks
-    	"ytick.major.size": 7,      
-    	"ytick.major.width": 1,       
-    	"ytick.minor.size": 3,       
-    	"ytick.minor.width": 1
+	# Y-axis ticks
+	"ytick.major.size": 7,      
+	"ytick.major.width": 1,       
+	"ytick.minor.size": 3,       
+	"ytick.minor.width": 1
 })
 
 @timefn

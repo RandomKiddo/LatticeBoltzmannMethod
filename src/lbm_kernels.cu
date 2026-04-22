@@ -8,7 +8,6 @@
  * Revision History:
  *      04/02/2026 Initial version with Karman Vortex Street.
  *      04/15/2026 Better documentation comments.
- *      04/22/2026 GPU optimizations for GPU-to-host calculations.
  * 
  * Notes:
  * Use Makefile to get executable to run.
@@ -126,40 +125,4 @@ __global__ void lbm_kernel(float* f_in, float* f_out, int* mask, int nx, int ny,
             f_out[i * nx * ny + idx] = f_local[i] - (f_local[i] - feq) / tau;
         }
     }
-}
-
-__global__ void get_probe_data(const float* d_f, int idx, int nx, int ny, float* d_out) {
-    float rho = 0.0f;
-    float uy = 0.0f;
-
-    for (int i = 0; i < 9; ++i) {
-        float fi = d_f[i*nx*ny + idx];
-
-        rho += fi;
-        uy += fi*CY[i];
-    }
-
-    *d_out = (rho > 0.001f) ? (uy / rho) : 0.0f; 
-    return; 
-}
-
-__global__ void compute_velocity_magnitude(const float* d_f, const int* d_mask, float* d_mag, int nx, int ny) {
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    if (x >= nx || y >= ny) return;
-
-    int idx = y * nx + x;
-    if (d_mask[idx] == 1) {
-        d_mag[idx] = 0.0f;
-        return;
-    }
-    
-    float rho = 0, ux = 0, uy = 0;
-    for(int i = 0; i < 9; ++i) {
-        float fi = d_f[i * nx * ny + idx];
-        rho += fi;
-        ux += fi * CX[i];
-        uy += fi * CY[i];
-    }
-    d_mag[idx] = sqrtf((ux/rho)*(ux/rho) + (uy/rho)*(uy/rho));
 }

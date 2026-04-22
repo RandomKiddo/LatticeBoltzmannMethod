@@ -8,8 +8,7 @@
  * Revision History:
  *      04/02/2026 Initial version with Karman Vortex Street.
  *      04/10/2026 Updated version to work with .json simulation input and Strouhal probing.
- *      04/17/2026 Probe optimizations.
- *      04/22/2026 Optimization updates between host and GPU.
+ *      04/27/2026 Probe optimizations.
  * 
  * Notes:
  * Use Makefile to get executable to run.
@@ -21,46 +20,66 @@
 #include <cmath>
 #include <fstream>
 #include <cuda_runtime.h>
-#include "lbm_kernels.cu"   
-#include "json.hpp"         
+#include "lbm_kernels.cu"   // Include the kernel logic directly.
+#include "json.hpp"         // Include for flexible simulation config.
 #include <sstream>
 
+// For easier usage of JSON reading.
 using json = nlohmann::json;
 
+// CPU-side constants for initialization and data export.
+// This is the same as the GPU in lbm_kernels.cu to deal with issues translating the arrays over.
+// See lbm_kernels.cu for explanation.
 const int CPU_CX[9] = {0, 1, 0, -1, 0, 1, -1, -1, 1};
 const int CPU_CY[9] = {0, 0, 1, 0, -1, 1, 1, -1, -1};
 const float CPU_W[9] = {4.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/9.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0};
 
+/**
+ * Main function that dictates how the simulation runs and what it outputs. 
+ */
 int main(void) {
-    /* --- 1. Configuration --- */
+    /*
+    --- 1. Configuration and Hyperparameters ---
+    */
     std::ifstream fin("config.json");
-    json data = json::parse(fin);
+    json data = json::parse(fin);       // Parse the input file.
 
+    // Fetch simulation parameters.
     const int nx = data["domain"]["nx"];
     const int ny = data["domain"]["ny"];
     const int steps = data["physics"]["steps"]; 
-    const float tau = data["physics"]["tau"];           
-    const float u_inlet = data["physics"]["u_inlet"];   
-    const int interval = data["output"]["interval"];    
+    const float tau = data["physics"]["tau"];           // Kinematic viscosity = (tau - 0.5)/3.
+    const float u_inlet = data["physics"]["u_inlet"];   // Inlet velocity magnitude.
+    const int interval = data["output"]["interval"];    // Output interval.
     const std::string base_filename = data["output"]["base_filename"];
     
+    // Memory size calculation (SoA: 9 directions * total lattice nodes).
     size_t f_size = 9 * nx * ny * sizeof(float);
     size_t mask_size = nx * ny * sizeof(int);
-    size_t mag_size = nx * ny * sizeof(float);
 
-    /* --- 2. Host Initialization --- */
+    /*
+    --- 2. Host Initialization ---
+    */
     std::vector<float> h_f(9 * nx * ny);
     std::vector<int> h_mask(nx * ny, 0);
 
+    // Cylinder steup: We place it at 1/4th of the domain length.
     int cx = nx / 4;
-    int cy = (ny / 2) + 1;  
-    int r = ny / 10;        
+    int cy = (ny / 2) + 1;  // ! Physical Trick: Adding +1 breaks vertical symmetry.
+                            // ! Perfect symmetric flow might delay vortex shredding indefinitely.
+    int r = ny / 10;        // Cylinder radius is 10% of domain height.
 
     for (int y = 0; y < ny; ++y) {
         for (int x = 0; x < nx; ++x) {
             int idx = y * nx + x;
-            if ((x - cx)*(x - cx) + (y - cy)*(y - cy) < r * r) h_mask[idx] = 1;
+            
+            // Define solid boundary (the cylinder).
+            if ((x - cx)*(x - cx) + (y - cy)*(y - cy) < r * r) {
+                h_mask[idx] = 1;
+            }
 
+            // Initialization: Fill fluid with equilibrium distribution based on u_inlet.
+            // This prevents a "shock" at t=0 by assuming fluid is already moving.
             float u2 = u_inlet * u_inlet;
             for (int i = 0; i < 9; ++i) {
                 float cu = 3.0f * (CPU_CX[i] * u_inlet);
@@ -69,103 +88,182 @@ int main(void) {
         }
     }
 
-    /* --- 3. GPU Memory Allocation --- */
-    float *d_f1, *d_f2, *d_mag, *d_probe_res;
+    /*
+    --- 3. GPU Memory Allocation ---
+    */
+    float *d_f1, *d_f2;             // Two buffers for "Ping-Pong" (double buffering).
     int *d_mask;
-    
     cudaMalloc(&d_f1, f_size);
-    cudaMalloc(&d_f2, f_size);      
+    cudaMalloc(&d_f2, f_size);      // Kernel reads from f1, writes to f2 (and vice versa).
     cudaMalloc(&d_mask, mask_size);
-    cudaMalloc(&d_mag, mag_size);           // Store velocity magnitudes for export
-    cudaMalloc(&d_probe_res, sizeof(float)); // Store single probe result
 
-    // Pinned Host Memory for faster D2H transfers
-    float *h_mag_pinned, *h_probe_pinned;
-    cudaMallocHost(&h_mag_pinned, mag_size);
-    cudaMallocHost(&h_probe_pinned, sizeof(float));
-
+    // Copy data to GPU.
     cudaMemcpy(d_f1, h_f.data(), f_size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_mask, h_mask.data(), mask_size, cudaMemcpyHostToDevice);
 
-    /* --- 4. Topology --- */
+    /*
+    --- 4. CUDA Kernel Topology ---
+    */
+    // Using 16x16 threads per block. Grid covers the entire domain nx*ny. 
     dim3 threadsPerBlock(16, 16);
     dim3 numBlocks((nx + 15) / 16, (ny + 15) / 16);
-    int probe_idx = (ny / 2) * nx + (nx / 2); // Probe point behind cylinder
 
-    /* --- 5. Files --- */
-    std::stringstream ss_main, ss_probe;
-    ss_main << base_filename << "_" << nx << "x" << ny << "_tau" << tau << ".dat";
-    ss_probe << base_filename << "_" << nx << "x" << ny << "_PROBE.dat";
+    std::cout << "Starting Simulation for " << steps << " steps..." << std::endl;
+
+    // Prepare output files with dynamic filename.
+    std::stringstream ss;
+    ss << base_filename << "_" << nx << "x" << ny << "_tau" << tau << "_uinlet" << u_inlet
+       << ".dat";
+    std::ofstream out(ss.str());
     
-    std::ofstream out(ss_main.str());
-    std::ofstream probe_file(ss_probe.str());
-    out << "# x y velocity_magnitude\n";
-    probe_file << "# t uy/rho\n";
-
-    std::cout << "Starting Simulation..." << std::endl;
-
-    /* --- 6. Simulation Loop --- */
+    // Output file header.
+    out << "# Main data file for LBM Karman Vortex Street Simulation for visualize.py Animation\n"
+        << "# x  y  velocity_magnitude\n";
+    
+    // Repeat for the "probe".
+    // ! Probing: Tracking y-velocity at a point behind the cylinder to calculate the
+    // ! Strouhal number (vortex shredding frequency) for theoretical comparison.
+    std::stringstream ss2;
+    ss2 << base_filename << "_" << nx << "x" << ny << "_tau" << tau << "_uinlet" << u_inlet
+       << "_PROBE.dat";
+    std::ofstream probe_file(ss2.str());
+    
+    // Probe output file header.
+    probe_file << "# Probe data file for LBM Karman Vortex Street Simulation for Strouhal Number.\n"
+        << "# t	    uy/rho \n";
+    
+    /*
+    --- 5. Simulation Loop ---
+    */
     for (int t = 0; t <= steps; ++t) {
-        
-        // Step 1: LBM Evolution
+        // Run LBM Kernel.
         lbm_kernel<<<numBlocks, threadsPerBlock>>>(d_f1, d_f2, d_mask, nx, ny, tau, u_inlet);
-        std::swap(d_f1, d_f2);
+        
+        // Swap pointers: The output of this step becomes the input for the next.
+        // This avoids constly memory copies within the GPU.
+        float* temp = d_f1;
+        d_f1 = d_f2;
+        d_f2 = temp;
 
-        // Step 2: Periodic Full Field Export
-        if (t % interval == 0) {
-            // Compute magnitude on GPU - No more 9-float-per-node CPU loops!
-            compute_velocity_magnitude<<<numBlocks, threadsPerBlock>>>(d_f1, d_mask, d_mag, nx, ny);
-            
-            // Transfer ONLY the magnitude result
-            cudaMemcpy(h_mag_pinned, d_mag, mag_size, cudaMemcpyDeviceToHost);
-
-            for (int i = 0; i < nx * ny; ++i) {
-                out << (i % nx) << " " << (i / nx) << " " << h_mag_pinned[i] << "\n";
-            }
-            if (t % 1000 == 0) std::cout << "Step: " << t << std::endl;
+        // Periodic console logging. 
+        if (t % 1000 == 0) {
+            std::cout << "Step: " << t << std::endl;
         }
 
-        // Step 3: Optimized Probe (Post-transient)
+        // Periodic data export (saves snapshots for animation).
+        if (t % interval == 0) {
+            // Prepare to copy.
+            cudaMemcpy(h_f.data(), d_f1, f_size, cudaMemcpyDeviceToHost);
+
+            // Loop and write x, y, and velocity magnitudes to the file.
+            for (int y = 0; y < ny; ++y) {
+            	for (int x = 0; x < nx; ++x) {
+            	    int idx = y * nx + x;
+            
+                    if (h_mask[idx] == 1) {
+                        // Inside the cylinder: Force velocity to 0 for visualization.
+                        out << x << " " << y << " " << 0.0 << "\n";
+                    } else {
+                        float rho = 0, ux = 0, uy = 0;
+                        for(int i = 0; i < 9; ++i) {
+                            float fi = h_f[i * nx * ny + idx];
+                            rho += fi;
+                            ux += fi * CPU_CX[i];
+                            uy += fi * CPU_CY[i];
+                        }
+                        // Normalize by density.
+                        ux /= rho;
+                        uy /= rho;
+                        
+                        float vel_mag = sqrtf(ux*ux + uy*uy);
+                        out << x << " " << y << " " << vel_mag << "\n";
+                    }
+                }
+            }
+        }
+
+
+        // todo test comments
         if (t > 5000) {
-            // Kernel reduces 9 populations to 1 float on device
-            get_probe_data<<<1, 1>>>(d_f1, probe_idx, nx, ny, d_probe_res);
-            
-            // Minimal transfer: 4 bytes instead of 36 bytes
-            cudaMemcpy(h_probe_pinned, d_probe_res, sizeof(float), cudaMemcpyDeviceToHost);
-            
-            probe_file << t << " " << *h_probe_pinned << "\n";
+            int probe_x = nx/2;
+            int probe_y = ny/2;
+            int idx = probe_y*nx + probe_x;
+
+            float f_local[9];
+
+            for (int i = 0; i < 9; ++i) {
+                float *d_ptr = d_f1 + (i*nx*ny) + idx;
+
+                cudaMemcpy(&f_local[i], d_ptr, sizeof(float), cudaMemcpyDeviceToHost);
+            }
+
+            float rho = 0.0f;
+            float uy = 0.0f;
+            for (int i = 0; i < 9; ++i) {
+                rho += f_local[i];
+                uy += f_local[i]*CPU_CY[i];
+            }
+
+            if (rho > 0.001f) {
+                probe_file << t << " " << (uy/rho) << "\n";
+            }
         }
     }
+    out.close();
 
-    /* --- 7. Final Export (Formatted for Gnuplot pm3d) --- */
-    std::cout << "Exporting final state for GNUPlot..." << std::endl;
-
-    // Compute magnitude one last time for the current state
-    compute_velocity_magnitude<<<numBlocks, threadsPerBlock>>>(d_f1, d_mask, d_mag, nx, ny);
-    cudaMemcpy(h_mag_pinned, d_mag, mag_size, cudaMemcpyDeviceToHost);
-
-    std::stringstream ss_last;
-    ss_last << base_filename << "_" << nx << "x" << ny << "_tau" << tau << "_uinlet" << u_inlet << "_LASTSTEP.dat";
-    std::ofstream out2(ss_last.str());
-
+    /*
+    --- 6. Cleanup & Final Export ---
+    */
+    std::cout << "Exporting animation data to " << ss.str() << "\n";
+    std::cout << "Exporting probe data to " << ss2.str() << "\n";
+    cudaMemcpy(h_f.data(), d_f1, f_size, cudaMemcpyDeviceToHost);
+    
+    // We output the last step for a GNUPlot visualization.
+    std::stringstream ss3;
+    ss3 << base_filename << "_" << nx << "x" << ny << "_tau" << tau << "_uinlet" << u_inlet
+       << "_LASTSTEP.dat";
+    std::ofstream out2(ss3.str());
+    
+    // Output header.
+    out2 << "# Last step data file for LBM Karman Vortex Street Simulation for Final Position GNUPlot\n"
+        << "# x  y  velocity_magnitude\n";
+    
+    // Loop and output the last state of the system, as prior.
     for(int y = 0; y < ny; ++y) {
         for(int x = 0; x < nx; ++x) {
             int idx = y * nx + x;
-            out2 << x << " " << y << " " << h_mag_pinned[idx] << "\n";
+            
+            if (h_mask[idx] == 1) {
+                // Inside the cylinder: Force velocity to 0 for visualization.
+                out2 << x << " " << y << " " << 0.0 << "\n";
+            } else {
+                float rho = 0, ux = 0, uy = 0;
+                for(int i = 0; i < 9; ++i) {
+                    float fi = h_f[i * nx * ny + idx];
+                    rho += fi;
+                    ux += fi * CPU_CX[i];
+                    uy += fi * CPU_CY[i];
+                }
+                // Normalize by density.
+                ux /= rho;
+                uy /= rho;
+                
+                float vel_mag = sqrtf(ux*ux + uy*uy);
+                out2 << x << " " << y << " " << vel_mag << "\n";
+            }
         }
-        // CRITICAL: Gnuplot pm3d requires a blank line after each scanline (row)
-        out2 << "\n"; 
+        out2 << "\n"; // Newline for gnuplot pm3d.
     }
-
-    /* --- 8. Cleanup --- */
-    out.close();
-    probe_file.close();
     out2.close();
+    
+    std::cout << "Exporting last step data to " << ss3.str() << "\n";
 
-    cudaFree(d_f1); cudaFree(d_f2); cudaFree(d_mask); 
-    cudaFree(d_mag); cudaFree(d_probe_res);
-    cudaFreeHost(h_mag_pinned); cudaFreeHost(h_probe_pinned);
+    // Cleanup the memory.
+    cudaFree(d_f1);
+    cudaFree(d_f2);
+    cudaFree(d_mask);
 
-    std::cout << "Done! Probe data saved to " << ss_probe.str() << std::endl;
+    // All done! 
+    std::cout << "Done!" << std::endl;
     return 0;
 }

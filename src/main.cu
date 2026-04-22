@@ -183,6 +183,7 @@ int main(void) {
                     out.write(reinterpret_cast<const char*>(&vel_mag), sizeof(float));
                 }
             }
+            out.flush(); // Ensure data hits the disk.
         }
 
         // Virtual probe data extraction.

@@ -274,10 +274,6 @@ int main(void) {
     probe_file.close();
     out2.close();
 
-    ss.close();
-    ss2.close();
-    ss3.close();
-
     // Cleanup the memory.
     cudaFree(d_f1);
     cudaFree(d_f2);

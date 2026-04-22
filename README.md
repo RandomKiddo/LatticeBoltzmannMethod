@@ -89,8 +89,6 @@ It is licensed by the MIT License: `Copyright © 2013-2026 Niels Lohmann`.
 
 ___
 
-<br />
-
 [Back to Top](#lattice-boltzmann-method)
 
 <sub>This page was last edited on 04.22.2026</sub>

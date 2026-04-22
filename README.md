@@ -9,8 +9,18 @@ A C++/CUDA/NVCC implementation of the Lattice Boltzmann Method for computational
 
 
 > [!NOTE]
-> This project is still under development.
+> This project is still under development and this README is still being developed.
+
+This project is licensed by the GNU GPLv3 License: `Copyright © 2026 RandomKiddo`.
 
 ___
 
-<sub>This page was last edited on 04.02.2026</sub>
+### Acknowledgements
+
+This project utilizes [Nlohmann's JSON C++ package](https://github.com/nlohmann/json) to read JSON files into C++ for dynamic simulation variables. 
+
+It is licensed by the MIT License: `Copyright © 2013-2026 Niels Lohmann`.
+
+___
+
+<sub>This page was last edited on 04.22.2026</sub>

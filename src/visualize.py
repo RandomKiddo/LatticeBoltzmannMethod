@@ -7,6 +7,7 @@ Programmer: Neil Ghugare ghugare.1@osu.edu
 
 Revision History:
 	04/15/2026 Initial version with comments.
+	04/22/2026 Update visualizations for .bin instead of .dat files.
 
 Notes:
 Best method to run is "python visualize.py" in the command line.
@@ -37,14 +38,14 @@ def load_frames(file_path: str) -> np.array:
 	"""
 	
 	# Load the data.
-	data = np.loadtxt(file_path)
+	data = np.fromfile(file_path, dtype=np.float32)
 	
 	# The number of data points per frame and calculate the # of frames.
 	points_per_frame = nx*ny
 	num_frames = len(data)//points_per_frame
 	
 	# Return the frames reshaped to work on an image.
-	frames = data[:, 2].reshape((num_frames, ny, nx))
+	frames = data.reshape((num_frames, ny, nx))
 	return frames 
 
 @timefn
@@ -121,7 +122,7 @@ if __name__ == '__main__':
 	base = config['output']['base_filename']
 	
 	# Find the .dat file for the simulation (see helper.py).
-	filename = assemble_data_filename(base, nx, ny, tau, u_inlet)
+	filename = assemble_data_filename(base, nx, ny, tau, u_inlet) + '.bin'
 
 	# Load the frame and make the animation.
 	all_frames = load_frames(filename)

@@ -8,7 +8,7 @@
 #
 # Revision History:
 # 	04/02/2026 Initial version for the OSC.
-#       04/10/2026 Fixes for use as source file.
+#   04/10/2026 Fixes for use as source file.
 #
 # Notes:
 # Run with "sh load_osc.sh" or use as source with "source load_osc.sh".

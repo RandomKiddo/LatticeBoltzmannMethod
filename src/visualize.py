@@ -25,11 +25,11 @@ from helper import *        # From helper.py file.
 
 # Matplotlib styling updates.
 plt.rcParams.update({
-    	# Text styling (LaTeX and Stix font). 
-    	"text.usetex": True,                                                
-    	"font.family": "serif",
-    	"font.serif": ["Nimbus Roman", "Times New Roman", "Times"],
-    	"mathtext.fontset": "stix",                                         
+    # Text styling (LaTeX and Stix font). 
+    "text.usetex": True,                                                
+    "font.family": "serif",
+    "font.serif": ["Nimbus Roman", "Times New Roman", "Times"],
+    "mathtext.fontset": "stix",                                         
     
 	# X-axis ticks
 	"xtick.major.size": 7,     

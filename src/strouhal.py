@@ -18,7 +18,7 @@ import argparse
 
 from helper import *		# From helper.py file.
 
-def calculate_strouhal(filename: str, ny: int, u_inlet: float) -> float:
+def calculate_strouhal(filename: str, ny: int, u_inlet: float, start: int = 0) -> float:
 	"""
 	Calculates the Strouhal number for the simulation.
 
@@ -38,6 +38,9 @@ def calculate_strouhal(filename: str, ny: int, u_inlet: float) -> float:
 	data = np.loadtxt(filename)
 	t = data[:, 0]
 	uy = data[:, 1]
+
+	t = t[start:]
+	uy = uy[start:]
 	
 	# Apply a Fast Fourier Transform (FFT) to the y-velocity.
 	# We can then extract the frequency of the vortices.

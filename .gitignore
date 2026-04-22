@@ -3,9 +3,11 @@
 
 # Visualizations
 *.mp4
+*.png
 
 # Data Files
 *.dat
+*.bin
 
 # Cache
 */__pycache__/

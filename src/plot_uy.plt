@@ -22,4 +22,4 @@ set ylabel "uy/rho"
 set key outside                   # Ensures legend doesn't overlap data
 
 # --- 5. The Plot Command --- 
-splot "vortex_street_4000x1000_tau0.6_uinlet0.1_PROBE.dat" using 1:2 notitle # Update .dat file as needed. 
+plot "vortex_street_4000x1000_tau0.6_uinlet0.1_PROBE.dat" using 1:2 notitle # Update .dat file as needed. 

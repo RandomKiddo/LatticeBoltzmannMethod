@@ -67,6 +67,6 @@ def assemble_data_filename(base: str, nx: int, ny: int, tau: float, u_inlet: flo
 	Returns
 	The .dat filename.
 	"""
-	return f'{base}_{nx}x{ny}_tau{tau}_uinlet{u_inlet}' + addendum + '.dat'
+	return f'{base}_{nx}x{ny}_tau{tau}_uinlet{u_inlet}' + addendum
 
 

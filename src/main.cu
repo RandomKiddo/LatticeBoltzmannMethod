@@ -175,12 +175,12 @@ int main(void) {
                             uy /= rho;
                         
                             vel_mag = sqrtf(ux*ux + uy*uy);
-                        } // else vel_mag stays 0.0f for cylinder mask.
+                        }
+                    } // Else: vel_mag stays 0.0f for cylinder mask.
 
-                        // Write the raw binary bits of the float to the file.
-                        // We interpret the address of the float as a char pointer for the stream.
-                        out.write(reinterpret_cast<const char*>(&vel_mag), sizeof(float));
-                    }
+                    // Write the raw binary bits of the float to the file.
+                    // We interpret the address of the float as a char pointer for the stream.
+                    out.write(reinterpret_cast<const char*>(&vel_mag), sizeof(float));
                 }
             }
         }
@@ -218,7 +218,7 @@ int main(void) {
 
             // Log normalized y-velocity to file if the cell is fluid (rho>0).
             // This time-series data is used for FFT to find the Strouhal number.
-            if (rho > 0.001f) {
+            if (rho > 0.0001f) {
                 probe_file << t << " " << (uy/rho) << "\n";
             }
         }
@@ -267,13 +267,16 @@ int main(void) {
         }
         out2 << "\n"; // Newline for gnuplot pm3d.
     }
+    std::cout << "Exporting last step data to " << ss3.str() << "\n";
 
     // Close files.
     out.close();
     probe_file.close();
     out2.close();
-    
-    std::cout << "Exporting last step data to " << ss3.str() << "\n";
+
+    ss.close();
+    ss2.close();
+    ss3.close();
 
     // Cleanup the memory.
     cudaFree(d_f1);

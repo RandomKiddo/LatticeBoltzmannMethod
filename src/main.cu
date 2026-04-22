@@ -137,9 +137,30 @@ int main(void) {
         }
     }
 
-    /* --- 7. Cleanup --- */
+    /* --- 7. Final Export (Formatted for Gnuplot pm3d) --- */
+    std::cout << "Exporting final state for GNUPlot..." << std::endl;
+
+    // Compute magnitude one last time for the current state
+    compute_velocity_magnitude<<<numBlocks, threadsPerBlock>>>(d_f1, d_mask, d_mag, nx, ny);
+    cudaMemcpy(h_mag_pinned, d_mag, mag_size, cudaMemcpyDeviceToHost);
+
+    std::stringstream ss_last;
+    ss_last << base_filename << "_" << nx << "x" << ny << "_tau" << tau << "_uinlet" << u_inlet << "_LASTSTEP.dat";
+    std::ofstream out2(ss_last.str());
+
+    for(int y = 0; y < ny; ++y) {
+        for(int x = 0; x < nx; ++x) {
+            int idx = y * nx + x;
+            out2 << x << " " << y << " " << h_mag_pinned[idx] << "\n";
+        }
+        // CRITICAL: Gnuplot pm3d requires a blank line after each scanline (row)
+        out2 << "\n"; 
+    }
+
+    /* --- 8. Cleanup --- */
     out.close();
     probe_file.close();
+    out2.close();
 
     cudaFree(d_f1); cudaFree(d_f2); cudaFree(d_mask); 
     cudaFree(d_mag); cudaFree(d_probe_res);

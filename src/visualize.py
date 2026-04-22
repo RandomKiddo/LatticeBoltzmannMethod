@@ -22,6 +22,28 @@ import argparse
 from typing import Any
 from helper import *        # From helper.py file.
 
+# Matplotlib styling updates.
+plt.rcParams.update({
+    "text.usetex": True,                                                # Use LaTeX.
+    "font.size": 25,
+    "font.family": "serif",
+    "font.serif": ["Nimbus Roman", "Times New Roman", "Times"],
+    "axes.labelsize": 25,                                               # Slightly larger labels for clarity.
+    "mathtext.fontset": "stix",                                         # Better fontset matching via Stix.
+    
+    # X-axis ticks
+    "xtick.major.size": 7,     
+    "xtick.major.width": 1,
+    "xtick.minor.size": 3,      
+    "xtick.minor.width": 1,     
+    
+    # Y-axis ticks
+    "ytick.major.size": 7,      
+    "ytick.major.width": 1,       
+    "ytick.minor.size": 3,       
+    "ytick.minor.width": 1
+})
+
 @timefn
 def load_frames(file_path: str) -> np.array:
 	"""

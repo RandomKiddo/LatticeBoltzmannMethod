@@ -100,7 +100,7 @@ if __name__ == '__main__':
 	
 	# Find the .dat file for the simulation (see helper.py).
 	# We add the addendum '_PROBE' to get the probe data file.
-	filename = assemble_data_filename(base, nx, ny, tau, u_inlet, addendum='_PROBE') + '.dat'
+	filename = assemble_data_filename(base, nx, ny, tau, u_inlet, addendum='_PROBE')
 	
 	# Output the Strouhal number to the console.
 	print(f'Strouhal Number: {calculate_strouhal(filename, ny, u_inlet):.6f}')

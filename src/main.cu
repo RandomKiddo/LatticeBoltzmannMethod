@@ -8,8 +8,7 @@
  * Revision History:
  *      04/02/2026 Initial version with Karman Vortex Street.
  *      04/10/2026 Updated version to work with .json simulation input and Strouhal probing.
- *      04/17/2026 Probe optimizations.
- *      04/22/2026 Main outputs changed to .bin instead of .dat. 
+ *      04/27/2026 Probe optimizations.
  * 
  * Notes:
  * Use Makefile to get executable to run.
@@ -114,9 +113,12 @@ int main(void) {
     // Prepare output files with dynamic filename.
     std::stringstream ss;
     ss << base_filename << "_" << nx << "x" << ny << "_tau" << tau << "_uinlet" << u_inlet
-       << ".bin";
-    std::ofstream out(ss.str(), std::ios::binary);  // Use a binary file.
-    // ! We cannot use a text header with this binary file.
+       << ".dat";
+    std::ofstream out(ss.str());
+    
+    // Output file header.
+    out << "# Main data file for LBM Karman Vortex Street Simulation for visualize.py Animation\n"
+        << "# x  y  velocity_magnitude\n";
     
     // Repeat for the "probe".
     // ! Probing: Tracking y-velocity at a point behind the cylinder to calculate the
@@ -157,73 +159,57 @@ int main(void) {
             for (int y = 0; y < ny; ++y) {
             	for (int x = 0; x < nx; ++x) {
             	    int idx = y * nx + x;
-                    float vel_mag = 0.0f;
             
-                    if (h_mask[idx] == 0) {     // Fluid cell.
+                    if (h_mask[idx] == 1) {
+                        // Inside the cylinder: Force velocity to 0 for visualization.
+                        out << x << " " << y << " " << 0.0 << "\n";
+                    } else {
                         float rho = 0, ux = 0, uy = 0;
-                        
                         for(int i = 0; i < 9; ++i) {
                             float fi = h_f[i * nx * ny + idx];
                             rho += fi;
                             ux += fi * CPU_CX[i];
                             uy += fi * CPU_CY[i];
                         }
-
                         // Normalize by density.
-                        if (rho > 0.0001f) {
-                            ux /= rho;
-                            uy /= rho;
+                        ux /= rho;
+                        uy /= rho;
                         
-                            vel_mag = sqrtf(ux*ux + uy*uy);
-                        }
-                    } // Else: vel_mag stays 0.0f for cylinder mask.
-
-                    // Write the raw binary bits of the float to the file.
-                    // We interpret the address of the float as a char pointer for the stream.
-                    out.write(reinterpret_cast<const char*>(&vel_mag), sizeof(float));
+                        float vel_mag = sqrtf(ux*ux + uy*uy);
+                        out << x << " " << y << " " << vel_mag << "\n";
+                    }
                 }
             }
-            out.flush(); // Ensure data hits the disk.
         }
 
-        // Virtual probe data extraction.
-        // We wait until t>5000 to allow initial flow transients to settle,
-        // so the vortex street fully develops.
+
+        // todo test comments
         if (t > 5000) {
-            // Define the spatial location for the probe (placed at the center of the domain).
             int probe_x = nx/2;
             int probe_y = ny/2;
-            int idx = probe_y*nx + probe_x;     // Linear index for the 2D lattice point.
+            int idx = probe_y*nx + probe_x;
 
-            // Local buffer to store the 9 discrete velocity populations (D2Q9).
             float f_local[9];
 
-            // Extract populations from GPU memorty to Host memory.
-            // * Note: This is a performance bottleneck for single float copying, which could be updated in the future.
             for (int i = 0; i < 9; ++i) {
-                // Calculate the pointer using SoA offset.
                 float *d_ptr = d_f1 + (i*nx*ny) + idx;
 
-                // Synchronous transfer of a single distribution function value.
                 cudaMemcpy(&f_local[i], d_ptr, sizeof(float), cudaMemcpyDeviceToHost);
             }
 
-            // Macroscopic moment calculation.
-            float rho = 0.0f;   // Macroscopic density (zeroth moment).
-            float uy = 0.0f;    // Vertical momentum (first moment in y).
-
+            float rho = 0.0f;
+            float uy = 0.0f;
             for (int i = 0; i < 9; ++i) {
-                rho += f_local[i];              // Sum of all populations.
-                uy += f_local[i]*CPU_CY[i];     // Direction-weighted sum.
+                rho += f_local[i];
+                uy += f_local[i]*CPU_CY[i];
             }
 
-            // Log normalized y-velocity to file if the cell is fluid (rho>0).
-            // This time-series data is used for FFT to find the Strouhal number.
-            if (rho > 0.0001f) {
+            if (rho > 0.001f) {
                 probe_file << t << " " << (uy/rho) << "\n";
             }
         }
     }
+    out.close();
 
     /*
     --- 6. Cleanup & Final Export ---
@@ -268,12 +254,9 @@ int main(void) {
         }
         out2 << "\n"; // Newline for gnuplot pm3d.
     }
-    std::cout << "Exporting last step data to " << ss3.str() << "\n";
-
-    // Close files.
-    out.close();
-    probe_file.close();
     out2.close();
+    
+    std::cout << "Exporting last step data to " << ss3.str() << "\n";
 
     // Cleanup the memory.
     cudaFree(d_f1);

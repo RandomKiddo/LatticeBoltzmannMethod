@@ -17,7 +17,7 @@ For more in-depth analysis and details on this project, see the [project PDF fil
 
 Below is an example visualization from the simulation output from `visualize.py`:
 
-<video src="./vis/vortex_street_zoomed.mp4" width="600" controls>
+<video src="https://github.com/user-attachments/assets/2f9bb3e5-1d62-4465-81c1-8e3035f478ae" width="600" controls>
   Your browser does not support the video tag.
 </video>
 

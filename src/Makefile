@@ -8,10 +8,13 @@
 # Revision History:
 # 	04/02/2026 Initial version with NVCC.
 #	04/22/2026 Update for .bin files.
+#	04/24/2026 Update comments.
 #
 # Notes:
 # Compile with "make -f Makefile".
 # Clean with "make clean".
+# Remove only the executable with "make new".
+# Run the executable with "./lbm_solver".
 # -------------------------------------------------------------------
 
 # We are using NVCC to compile for the GPU.

@@ -7,6 +7,7 @@ Programmer: Neil Ghugare ghugare.1@osu.edu
 
 Revision History:
 	04/16/2026 Created initial version with comments.
+	04/24/2026 Argparse generalizations.
 
 Notes:
 Best method to run is "python strouhal.py" in the command line.
@@ -87,6 +88,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(prog='Karman Vortex Street LBM Strouhal',
 					 description='Verifies the Strouhal Number for the LBM simulation.')
 	parser.add_argument('--config', type=str, help='Path to JSON config file.', default='config.json')
+	parser.add_argument('--start', type=int, help='Start period to cut out transients when calculating values.', default=0)
 	
 	# Parse the command line arguments.
 	args = parser.parse_args()
@@ -106,7 +108,7 @@ if __name__ == '__main__':
 	filename = assemble_data_filename(base, nx, ny, tau, u_inlet, addendum='_PROBE') + '.dat'
 	
 	# Output the Strouhal number to the console.
-	print(f'Strouhal Number: {calculate_strouhal(filename, ny, u_inlet):.6f}')
+	print(f'Strouhal Number: {calculate_strouhal(filename, ny, u_inlet, start=args.start):.6f}')
 
 	# Calculate the Reynolds number as well to the console.
 	print(f'Reynolds Number: {calculate_reynolds(ny, u_inlet, tau):.4f}')

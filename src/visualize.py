@@ -9,6 +9,7 @@ Revision History:
 	04/15/2026 Initial version with comments.
 	04/22/2026 Update visualizations for .bin instead of .dat files.
 	04/22/2026 Styling updates for plotting.
+	04/24/2026 Zoom-in visualization capabilities.
 
 Notes:
 Best method to run is "python visualize.py" in the command line.
@@ -71,7 +72,7 @@ def load_frames(file_path: str) -> np.array:
 	return frames 
 
 @timefn
-def make_animation(all_frames: np.array, output: str) -> None:
+def make_animation(all_frames: np.array, output: str, zoomed: bool = False, nx: int = 4000, ny: int = 2000) -> None:
 	"""
 	Makes and saves the animation.
 
@@ -80,13 +81,22 @@ def make_animation(all_frames: np.array, output: str) -> None:
 	2. output - The output file name.
 	
 	Arguments (optional)
-	None
+	1. zoomed - If the visualization should zoom in on the cylinder. Default=false.
+	2. nx - The x domain for zooming in. Default=4000.
+	3. ny - The y domain for zooming in. Default=1000.
 
 	Returns
 	None
 	"""
 	
 	fig, ax = plt.subplots(figsize=(10, 4))
+	
+	if zoomed:
+		x_start, x_end = nx//8, nx//1.5
+		y_start, y_end = ny//4, 3*ny//4
+		
+		ax.set_xlim([x_start, x_end])
+		ax.set_ylim([y_start, y_end])
 
 	# Show the first frame.
 	img = ax.imshow(all_frames[0], origin='lower', cmap='inferno', interpolation='bilinear',
@@ -129,9 +139,16 @@ if __name__ == '__main__':
 					 description='Makes output MP4 animations from Karman Vortex Street LBM .dat files')
 	parser.add_argument('--config', type=str, help='Path to JSON config file.', default='config.json')
 	parser.add_argument('--output', type=str, help='Path and filename of output visualization.', default='vortex_street.mp4')
+	parser.add_argument('--zoomed', help='Zooms in on the cylinder region in the animation output.', action='store_true')
 	
 	# Parse the command line arguments.
 	args = parser.parse_args()
+	
+	# Filename safety checks.
+	if not args.config.endswith('.json'):
+		args.config += '.json'
+	if not args.output.endswith('.mp4'):
+		args.output += '.mp4'
 
 	# Load the JSON config file (this is from helper.py).
 	config = load_json(args.config)
@@ -148,6 +165,6 @@ if __name__ == '__main__':
 
 	# Load the frame and make the animation.
 	all_frames = load_frames(filename)
-	make_animation(all_frames, args.output)
+	make_animation(all_frames, args.output, args.zoomed, nx, ny)
 
 

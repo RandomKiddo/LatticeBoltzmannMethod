@@ -7,17 +7,22 @@ A C++/CUDA/NVCC implementation of the Lattice Boltzmann Method for computational
 ![GitHub top language](https://img.shields.io/github/languages/top/RandomKiddo/LatticeBoltzmannMethod)
 ![GitHub repo size](https://img.shields.io/github/repo-size/RandomKiddo/LatticeBoltzmannMethod%20)
 
-
-> [!NOTE]
-> This project is still under development and this README is still being developed.
-
 This project is licensed by the GNU GPLv3 License: `Copyright © 2026 RandomKiddo`.
 
 ___
 
 ### Project Overview and Example Results
 
-*todo*
+For more in-depth analysis and details on this project, see the [project PDF file](https://github.com/RandomKiddo/LatticeBoltzmannMethod/blob/master/Physics_5810_Final_Project.pdf).
+
+Below is an example visualization from the simulation output from `visualize.py`. 
+
+<video src="./vis/vortex_street_zoomed.mp4" width="600" controls>
+  Your browser does not support the video tag.
+</video>
+
+We do analysis to prior results, yielding the following $St$ vs. $Re$ plot, showing good agreement, especially with general shape:
+![img](./vis/strouhal_values.png)
 
 ___
 
@@ -27,17 +32,17 @@ The JSON file `config.json` holds the simulation parameters:
 ```js
 {
     "domain": {
-        "nx": 1500,
-        "ny": 375
+        "nx": 4000,
+        "ny": 1000
     },
     "physics": {
         "tau": 0.6,
         "u_inlet": 0.1,
-        "steps": 100000
+        "steps": 150000
     },
     "output": {
         "base_filename": "vortex_street",
-        "interval": 200
+        "interval": 1000
     }
 }
 ```
@@ -87,8 +92,10 @@ This project utilizes [Nlohmann's JSON C++ package](https://github.com/nlohmann/
 
 It is licensed by the MIT License: `Copyright © 2013-2026 Niels Lohmann`.
 
+The inferno palette (`inferno.pal` file) for Gnuplot was accessed from the [Gnuplot palette repository](https://github.com/Gnuplotting/gnuplot-palettes).
+
 ___
 
 [Back to Top](#lattice-boltzmann-method)
 
-<sub>This page was last edited on 04.22.2026</sub>
+<sub>This page was last edited on 04.24.2026</sub>

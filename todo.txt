@@ -1,3 +1,2 @@
-Check and redo omments.
 Acknowledge inferno.pal
 README updates

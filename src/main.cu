@@ -68,7 +68,7 @@ int main(void) {
     int cx = nx / 4;
     int cy = (ny / 2) + 1;  // ! Physical Trick: Adding +1 breaks vertical symmetry.
                             // ! Perfect symmetric flow might delay vortex shredding indefinitely.
-    int r = ny / 40;        // Cylinder radius is 10% of domain height.
+    int r = ny / 40;        // Cylinder radius is 4% of domain height.
 
     for (int y = 0; y < ny; ++y) {
         for (int x = 0; x < nx; ++x) {

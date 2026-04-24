@@ -15,7 +15,7 @@ ___
 
 For more in-depth analysis and details on this project, see the [project PDF file](https://github.com/RandomKiddo/LatticeBoltzmannMethod/blob/master/Physics_5810_Final_Project.pdf).
 
-Below is an example visualization from the simulation output from `visualize.py`. 
+Below is an example visualization from the simulation output from `visualize.py`:
 
 <video src="./vis/vortex_street_zoomed.mp4" width="600" controls>
   Your browser does not support the video tag.

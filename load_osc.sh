@@ -9,6 +9,7 @@
 # Revision History:
 # 	04/02/2026 Initial version for the OSC.
 #   04/10/2026 Fixes for use as source file.
+#   04/25/2026 Generalizations for module and conda loading.
 #
 # Notes:
 # Run with "sh load_osc.sh" or use as source with "source load_osc.sh".
@@ -18,14 +19,10 @@
 echo "Setting up the OSC shell for easy compilation and executing..."
 
 # 1. Use the absolute path to the Lmod executable.
-# Since your function uses $LMOD_CMD, we'll use that directly.
-# If someone runs this in a clean shell where $LMOD_CMD isn't set, 
-# we provide the standard OSC absolute path as a fallback.
+# We provide the standard OSC absolute path as a fallback.
 LMOD_EXE="${LMOD_CMD:-/usr/share/lmod/lmod/libexec/lmod}"
 
 # 2. Replicate the 'module' function behavior using absolute paths.
-# The 'eval' is necessary because Lmod generates shell commands 
-# that need to be executed in the current session.
 eval "$($LMOD_EXE bash load cuda/12.8.1)"
 eval "$($LMOD_EXE bash load miniconda3/24.1.2-py310)"
 

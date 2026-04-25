@@ -47,8 +47,10 @@ fi
 
 # 4. Activate or create environment.
 if conda env list | grep -q "lbm"; then
+    echo "Environment already available, activating now!"
     conda activate lbm
 else
+    echo "Environment not found, creating now..."
     conda env create -f environment.yml
     conda activate lbm
 fi

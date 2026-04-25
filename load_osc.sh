@@ -32,8 +32,12 @@ eval "$($LMOD_EXE bash load miniconda3/24.1.2-py310)"
 echo "Modules loaded. Verifying with absolute path to list..."
 eval "$($LMOD_EXE bash list)"
 
+echo "Using NVCC:"
+nvcc --version
+
 # 3. Initialize Conda using an absolute path.
 # We find the conda path to be dynamic but specific.
+echo "Loading conda..."
 CONDA_BIN=$(which conda 2>/dev/null || echo "/usr/local/miniconda3/24.1.2-py310/bin/conda")
 CONDA_ROOT=$(dirname $(dirname "$CONDA_BIN"))
 

@@ -17,25 +17,31 @@
 
 echo "Setting up the OSC shell for easy compilation and executing..."
 
-# Define the absolute path to the Lmod executable
-# We use the variable if it exists, otherwise we hardcode the standard OSC path
+# 1. Use the absolute path to the Lmod executable.
+# Since your function uses $LMOD_CMD, we'll use that directly.
+# If someone runs this in a clean shell where $LMOD_CMD isn't set, 
+# we provide the standard OSC absolute path as a fallback.
 LMOD_EXE="${LMOD_CMD:-/usr/share/lmod/lmod/libexec/lmod}"
 
-# Load modules using the absolute path to python/lmod
-# Note: Lmod requires the shell type (bash) as the first argument
-$LMOD_EXE bash load cuda/12.8.1
-$LMOD_EXE bash load miniconda3/24.1.2-py310
+# 2. Replicate the 'module' function behavior using absolute paths.
+# The 'eval' is necessary because Lmod generates shell commands 
+# that need to be executed in the current session.
+eval "$($LMOD_EXE bash load cuda/12.8.1)"
+eval "$($LMOD_EXE bash load miniconda3/24.1.2-py310)"
 
-# Verify
-$LMOD_EXE bash list
+echo "Modules loaded. Verifying with absolute path to list..."
+eval "$($LMOD_EXE bash list)"
 
-# Setup Conda
-# We use 'command -v' to find the absolute path of the conda binary
-CONDA_BIN=$(command -v conda)
-CONDA_ROOT=$(dirname $(dirname $CONDA_BIN))
-source "$CONDA_ROOT/etc/profile.d/conda.sh"
+# 3. Initialize Conda using an absolute path.
+# We find the conda path to be dynamic but specific.
+CONDA_BIN=$(which conda 2>/dev/null || echo "/usr/local/miniconda3/24.1.2-py310/bin/conda")
+CONDA_ROOT=$(dirname $(dirname "$CONDA_BIN"))
 
-# Activate or create environment
+if [ -f "$CONDA_ROOT/etc/profile.d/conda.sh" ]; then
+    source "$CONDA_ROOT/etc/profile.d/conda.sh"
+fi
+
+# 4. Activate or create environment.
 if conda env list | grep -q "lbm"; then
     conda activate lbm
 else

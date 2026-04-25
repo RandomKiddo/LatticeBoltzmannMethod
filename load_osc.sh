@@ -17,19 +17,30 @@
 
 echo "Setting up the OSC shell for easy compilation and executing..."
 
-# Load the CUDA module.
-module load cuda/12.8.1
+# Define the absolute path to the Lmod executable
+# We use the variable if it exists, otherwise we hardcode the standard OSC path
+LMOD_EXE="${LMOD_CMD:-/usr/share/lmod/lmod/libexec/lmod}"
 
-# Load Miniconda.
-module load miniconda3/24.1.2-py310
+# Load modules using the absolute path to python/lmod
+# Note: Lmod requires the shell type (bash) as the first argument
+$LMOD_EXE bash load cuda/12.8.1
+$LMOD_EXE bash load miniconda3/24.1.2-py310
 
-# Test that NVCC is active.
-nvcc --version
+# Verify
+$LMOD_EXE bash list
 
-# Check which modules are loaded.
-module list
+# Setup Conda
+# We use 'command -v' to find the absolute path of the conda binary
+CONDA_BIN=$(command -v conda)
+CONDA_ROOT=$(dirname $(dirname $CONDA_BIN))
+source "$CONDA_ROOT/etc/profile.d/conda.sh"
 
-# Activate conda (lbm) or create it if it doesn't exist.
-conda env list | grep -q "lbm" && conda activate lbm || conda env create -f environment.yml 
+# Activate or create environment
+if conda env list | grep -q "lbm"; then
+    conda activate lbm
+else
+    conda env create -f environment.yml
+    conda activate lbm
+fi
 
 echo "Setup finished!"
